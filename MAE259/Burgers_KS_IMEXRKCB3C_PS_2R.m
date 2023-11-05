@@ -1,9 +1,9 @@
 function Burger_KS_IMEXRKCB3C_PS_2R
-
+rng("default")
 %%%%%%%%%%%%%%%%%%%% Initialize the simulation paramters (user input) %%%%%%%%%%%%%%%%%%%%
-L=200; Tmax=100; N=1024; dt=0.05; PlotInt=10; alpha=1; % alpha=0 for Burgers, alpha=1 for KS
-dx=L/N; x=(0:N-1)'*dx; u=0.15*sin(x); uhat=RC_RFFT(u,N);
-%u=0.15*randn(N,1);
+L=400; Tmax=100; N=2048; dt=0.05; PlotInt=10; alpha=1; % alpha=0 for Burgers, alpha=1 for KS
+dx=L/N; x=(0:N-1)'*dx; u=0.15*randn(N,1); uhat=RC_RFFT(u,N);
+
 %%%%%%%%%%%% Precalculate the time-stepping coefficients used in the simulation %%%%%%%%%%
 kx=(2*pi/L)*[0:N/2-1]';
 if alpha==0; Aop=-kx.^2; else Aop=kx.^2-kx.^4; end;
@@ -19,10 +19,10 @@ aex21 = 3375509829940/4525919076317;
 aex32 = 272778623835/1039454778728;
 aim43 = 1660544566939/2334033219546;
 
-abim = [0 0 aim32-b2];
-abex = [0 aex21-b1 aex32-b2];
-b = [b1 b2 b3 b4];
-aim = [0 aim22 aim33];
+abim = [0 0 aim32-b2]*dt;
+abex = [0 aex21-b1 aex32-b2]*dt;
+b = [b1 b2 b3 b4]*dt;
+aim = [0 aim22 aim33]*dt;
 
 tic
 for k=1:Tmax/dt
@@ -30,14 +30,14 @@ for k=1:Tmax/dt
     if (rk == 1)
       rhat = uhat;
     else
-      rhat = uhat+abim(rk)*dt*Aop.*rhat+abex(rk)*dt*g(rhat,kx,N);
+      rhat = uhat+abim(rk)*Aop.*rhat+abex(rk)*g(rhat,kx,N);
     end
-    rhat = rhat./(1-aim(rk)*dt*Aop);
-    uhat = uhat+b(rk)*dt*Aop.*rhat+b(rk)*dt.*g(rhat,kx,N);
+    rhat = rhat./(1-aim(rk)*Aop);
+    uhat = uhat+b(rk)*Aop.*rhat+b(rk).*g(rhat,kx,N);
   end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END OF RK LOOP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   rs(k,:)=RC_RFFTinv(uhat,N)'; ts(k)=k*dt; % These variables are just used for plotting...
   if (mod(k,PlotInt)==0)
-    pause(0.001); RC_PlotXY(x,rs(k,:),k*dt,0,L,-1.5,1.5);
+    pause(0.001); RC_PlotXY(x,rs(k,:),k*dt,0,L,-3,3);
     % Uncomment the lines below to make some additional interesting plots.
     % figure(2); semilogy(kx(1:fix(N/3)),abs(uhat(1:fix(N/3))).^2); axis([0 3 1e-8 1e-1])
     % figure(3); loglog(kx(1:fix(N/3)),abs(uhat(1:fix(N/3))).^2); axis([3e-2 4 1e-8 1e-1])
